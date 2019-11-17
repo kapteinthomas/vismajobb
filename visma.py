@@ -13,7 +13,6 @@ class Window(QWidget):
         self.ref_info = ["PersonID", "FirmaID", "Etternavn", "Fornavn", "Tittel", "Telefon", "epost"]
         self.load_db()
         self.UI()
-        self.testing()
     
     def load_db(self):
         data = db.fetch_all_clients()
@@ -77,12 +76,16 @@ class Window(QWidget):
         self.ref_info_list = QListWidget(self)
         self.ref_info_list.move(300, 320)
 
+        # Add and delete reference person buttons
+        self.add_ref_btn = QPushButton("Legg til referanse", self)
+        self.del_ref_btn = QPushButton("Slett referanse", self)
+        self.add_ref_btn.move(10, 520)
+        self.del_ref_btn.move(120, 520)
+        self.add_ref_btn.clicked.connect(self.add_reference)
+        self.del_ref_btn.clicked.connect(self.delete_reference)
+
         self.show()
     
-    def testing(self):
-        #data = database.fetch_all_clients()
-        #self.populate_results(data)
-        pass
     
     def on_client_clicked(self):
         self.ref_info_list.clear()
@@ -120,13 +123,20 @@ class Window(QWidget):
     def search(self):
         firma = self.search_prompt.text()
         self.search_prompt.clear()
-        print(firma)
+        data = db.search_by_name(firma)
+        if data != []:
+            self.populate_results(data)
+        elif firma == "":
+            QMessageBox.information(self, "Advarsel", "Du må legge inn et kundenavn, eller kundetype")
+        else:
+            QMessageBox.information(self, "Advarsel", "Kunne ikke finne {}\n Appen er 'case'-sensitiv for øybelikket".format(firma))
     
     def view_all_clients(self):
         self.search_results.clear()
         self.populate_results(self.all_clients)
     
     def populate_results(self, data):
+        self.search_results.clear()
         for item in data:
             client = str(item[0]) + '-' + item[1]
             self.search_results.addItem(client)
@@ -151,8 +161,22 @@ class Window(QWidget):
             self.ref_list.addItem(name)
 
     def add_client(self):
-        self.new_client = AddClient(self.client_info)
-        self.close()
+        self.new_client = AddClient(self, self.client_info)
+        #self.close()
+
+    def add_reference(self):
+        if self.search_results.currentItem() == None:
+            QMessageBox.information(self, "Advarsel", "Du må velge en kunde")
+            return
+        else:
+            client = self.search_results.currentItem().text().split('-')
+            clientID = int(client[0])
+            client_name = client[1]
+            self.new_ref = AddReference(self, self.ref_info, clientID)
+
+    def delete_reference(self):
+        print("Delete")
+        
     
     def delete_client(self):
         if self.search_results.currentItem() == None:
@@ -160,20 +184,33 @@ class Window(QWidget):
             return
         else:
             client = self.search_results.currentItem().text().split('-')
-            clientID = client[0]
+            clientID = int(client[0])
             client_name = client[1]
-            print(clientID)
-
+            reply = QMessageBox.question(self, "Advarsel", "Er du sikkert på at du vil slette {}?".format(client_name))
+            if reply == QMessageBox.Yes:
+                try:
+                    db.delete_client(clientID)
+                    QMessageBox.information(self, "Vellykket", "{} ble slette fra kundebanken".format(client_name))
+                    self.refresh_db()
+                except:
+                    QMessageBox.informtaion(self, "Advarsel", "No gikk galt. Kunne ikke slette {} fra kundebanken".format(client_name))
+            else:
+                return
+    
+    def refresh_db(self):
+        self.load_db()
+        self.view_all_clients()
 
 
 class AddClient(QWidget):
-    def __init__(self, info):
+    def __init__(self, window, info):
         super().__init__()
         self.setWindowTitle("Legg til kunde")
         self.setGeometry(450, 150, 260, 200)
         self.client_info = info
         self.UI()
         self.show()
+        self.window = window
         
     
     def UI(self):
@@ -195,9 +232,11 @@ class AddClient(QWidget):
         self.add_btn.move(10, 170)
         self.abort_btn.move(160, 170)
         self.add_btn.clicked.connect(self.add_client)
+        self.abort_btn.clicked.connect(self.close)
     
-    def closeEvent(self, event): #Innebygd funksjon
-        self.main = Window()
+    #def closeEvent(self, event): #Innebygd funksjon
+        #self.window.refresh_db()
+        #self.main = Window()
     
     def add_client(self):
         self.input_data = []
@@ -208,13 +247,68 @@ class AddClient(QWidget):
             try:        
                 db.add_client(self.input_data)
                 QMessageBox.information(self, "Utfort!", "Kunde lagt til")
+                self.window.refresh_db()
                 self.close()
-                self.window = Window()
+                #self.window = Window()
             except:
                 QMessageBox.information(self, "Advarsel", "Noe gikk galt")
                 pass
         else:
             QMessageBox.information(self, "Advarsel", "For mange tomme felt")
+
+class AddReference(QWidget):
+    def __init__(self, window, info, clientID):
+        super().__init__()
+        self.setWindowTitle("Legg til Referanseperson")
+        self.setGeometry(450, 150, 260, 240)
+        self.window = window
+        self.clientID = clientID
+        self.ref_info = info
+        self.UI()
+        self.show()
+        
+    
+    def UI(self):
+        self.labels = []
+        self.inputs = []
+        x = 10
+        y = 10
+        xinput = 80
+        increment = 25
+        for i in range((len(self.ref_info)) - 2):
+            self.labels.append(QLabel((self.ref_info[i+2] + ': '), self))
+            self.labels[i].move(x, y)
+            self.inputs.append(QLineEdit(self))
+            self.inputs[i].move(xinput, y)
+            y += increment
+
+        self.add_btn = QPushButton("Legg til", self)
+        self.abort_btn = QPushButton("Avbryt", self)
+        self.add_btn.move(10, 170)
+        self.abort_btn.move(160, 170)
+        self.add_btn.clicked.connect(self.add_ref)
+        self.abort_btn.clicked.connect(self.close)
+    
+    #def closeEvent(self, event): #Innebygd funksjon
+        #self.main = Window()
+    
+    def add_ref(self):
+        self.input_data = []
+        for i in range((len(self.ref_info)) - 2):
+            self.input_data.append(self.inputs[i].text())
+        
+        print(self.input_data)
+
+        if (self.input_data[0] == "" or self.input_data[1] == "" or self.input_data[3] == ""):
+            QMessageBox.information(self, "Advarsel", "Du må legge til et fullt navn og telefonnummer")
+        else:
+            try:
+                print("Legger til")
+                db.add_reference(self.clientID, self.input_data)
+                QMessageBox.information(self, "Utfort!", "Referanseperons lagt til")
+                self.close()
+            except:
+                QMessageBox.information(self, "Advarsel", "Noe gikk galt")
 
 
 def main():

@@ -31,5 +31,20 @@ class Database:
         self.c.execute(query, (data[0], data[1], data[2], data[3], data[4]))
         self.conn.commit()
     
+    def add_reference(self, clientid, data):
+        query = "INSERT INTO Referanseperson (FirmaID, Etternavn, Fornavn, Tittel, Tlf, epost) \
+            VALUES (?, ?, ?, ?, ?, ?)"
+        self.c.execute(query, (clientid, data[0], data[1], data[2], data[3], data[4]))
+        self.conn.commit()
+    
+    def delete_client(self, id):
+        self.c.execute("DELETE FROM Kunde WHERE FirmaID = ?", (id,))
+        self.conn.commit()
+    
+    def search_by_name(self, name):
+        self.c.execute("SELECT * FROM Kunde WHERE Firmanavn = ?", (name,))
+        return self.c.fetchall()
+
+    
     def __del__(self):
         self.conn.close()
