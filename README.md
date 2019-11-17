@@ -1,2 +1,4 @@
-# vismajobb
+# vismajob
 Programmeringsoppgaven
+
+Dependencies: PyQt5
