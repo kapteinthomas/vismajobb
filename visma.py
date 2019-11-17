@@ -30,9 +30,9 @@ class Window(QWidget):
 
         # Search
         self.search_prompt = QLineEdit(self)
-        self.search_prompt.setPlaceholderText("Søk på kunde")
+        self.search_prompt.setPlaceholderText("Sok på kunde")
         self.search_prompt.move(10, 50)
-        self.search_btn = QPushButton("Søk", self)
+        self.search_btn = QPushButton("Sok", self)
         self.search_btn.move(150, 50)
         self.search_btn.clicked.connect(self.search)
 
@@ -45,6 +45,11 @@ class Window(QWidget):
         self.add_client_btn = QPushButton("Legg til kunde", self)
         self.add_client_btn.move(350, 50)
         self.add_client_btn.clicked.connect(self.add_client)
+
+        # Slett-button
+        self.add_client_btn = QPushButton("Slett kunde", self)
+        self.add_client_btn.move(480, 50)
+        self.add_client_btn.clicked.connect(self.delete_client)
 
         # Search result list
         self.result_h = QLabel("Resultater", self)
@@ -148,6 +153,17 @@ class Window(QWidget):
     def add_client(self):
         self.new_client = AddClient(self.client_info)
         self.close()
+    
+    def delete_client(self):
+        if self.search_results.currentItem() == None:
+            QMessageBox.information(self, "Advarsel", "Du må velge en kunde")
+            return
+        else:
+            client = self.search_results.currentItem().text().split('-')
+            clientID = client[0]
+            client_name = client[1]
+            print(clientID)
+
 
 
 class AddClient(QWidget):
@@ -191,7 +207,7 @@ class AddClient(QWidget):
         if len(self.input_data) > 2:
             try:        
                 db.add_client(self.input_data)
-                QMessageBox.information(self, "Utført!", "Kunde lagt til")
+                QMessageBox.information(self, "Utfort!", "Kunde lagt til")
                 self.close()
                 self.window = Window()
             except:
