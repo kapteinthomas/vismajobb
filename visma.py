@@ -14,14 +14,14 @@ class Window(QWidget):
         self.load_db()
         self.UI()
     
+
     def load_db(self):
         data = db.fetch_all_clients()
         self.all_clients = []
         for row in range(len(data)):
             self.all_clients.append((data[row][0], data[row][1]))
-        print("The tuples")
-        print(self.all_clients)
-    
+
+
     def UI(self):
         # Header
         self.header = QLabel("Visma Kundebank", self)
@@ -94,6 +94,7 @@ class Window(QWidget):
         self.get_client_info(id)
         self.get_ref_persons(id)
     
+
     def on_ref_clicked(self):
         # Get ref id
         ref = self.ref_list.currentItem().text()
@@ -101,10 +102,12 @@ class Window(QWidget):
         # Collect info on ref
         self.get_ref_info(id)
     
+
     def get_client_info(self, id):
         data = db.fetch_client_info(id)
         self.populate_info_list(data)
     
+
     def get_ref_persons(self, id):
         data = db.fetch_contacts(id)
         names = []
@@ -120,6 +123,7 @@ class Window(QWidget):
         data = db.fetch_contact_info(id)
         self.populate_ref_info_list(data)
 
+
     def search(self):
         firma = self.search_prompt.text()
         self.search_prompt.clear()
@@ -131,16 +135,19 @@ class Window(QWidget):
         else:
             QMessageBox.information(self, "Advarsel", "Kunne ikke finne {}\n Appen er 'case'-sensitiv for øybelikket".format(firma))
     
+
     def view_all_clients(self):
         self.search_results.clear()
         self.populate_results(self.all_clients)
     
+
     def populate_results(self, data):
         self.search_results.clear()
         for item in data:
             client = str(item[0]) + '-' + item[1]
             self.search_results.addItem(client)
     
+
     def populate_info_list(self, data):
         self.info_list.clear()
         data = data[0]
@@ -148,6 +155,7 @@ class Window(QWidget):
             row = self.client_info[item] + ": " + str(data[item])
             self.info_list.addItem(row)
     
+
     def populate_ref_info_list(self, data):
         self.ref_info_list.clear()
         data = data[0]
@@ -155,14 +163,17 @@ class Window(QWidget):
             row = self.ref_info[item] + ": " + str(data[item])
             self.ref_info_list.addItem(row)
     
+
     def populate_ref_list(self, names):
         self.ref_list.clear()
         for name in names:
             self.ref_list.addItem(name)
 
+
     def add_client(self):
         self.new_client = AddClient(self, self.client_info)
         #self.close()
+
 
     def add_reference(self):
         if self.search_results.currentItem() == None:
@@ -173,6 +184,7 @@ class Window(QWidget):
             clientID = int(client[0])
             client_name = client[1]
             self.new_ref = AddReference(self, self.ref_info, clientID)
+
 
     def delete_reference(self):
         if self.ref_list.currentItem() == None:
@@ -192,6 +204,7 @@ class Window(QWidget):
                 except Exception as e:
                     QMessageBox.information(self, "Advarsel", "No gikk galt. Kunne ikke slette {} \n Exception error: {}".format(ref_name, e))
     
+
     def delete_client(self):
         if self.search_results.currentItem() == None:
             QMessageBox.information(self, "Advarsel", "Du må velge en kunde")
@@ -210,6 +223,7 @@ class Window(QWidget):
                     QMessageBox.informtaion(self, "Advarsel", "No gikk galt. Kunne ikke slette {} fra kundebanken".format(client_name))
             else:
                 return
+    
     
     def refresh_db(self):
         self.load_db()
