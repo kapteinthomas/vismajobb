@@ -175,8 +175,22 @@ class Window(QWidget):
             self.new_ref = AddReference(self, self.ref_info, clientID)
 
     def delete_reference(self):
-        print("Delete")
-        
+        if self.ref_list.currentItem() == None:
+            QMessageBox.information(self, "Advarsel", "Du må velge en referanseperson")
+        else:
+            ref = self.ref_list.currentItem().text().split('-')
+            refID = int(ref[0])
+            ref_name = ref[1]
+            clientID = db.fetch_contact_info(refID)[0][1]
+            reply = QMessageBox.question(self, "Advarsel", "Er du sikkert på at du vil slette {}?".format(ref_name))
+            if reply == QMessageBox.Yes:
+                try:
+                    db.delete_reference(refID)
+                    QMessageBox.information(self, "Vellykket", "{} ble slettet".format(ref_name))
+                    self.refresh_db()
+                    self.get_ref_persons(clientID)
+                except Exception as e:
+                    QMessageBox.information(self, "Advarsel", "No gikk galt. Kunne ikke slette {} \n Exception error: {}".format(ref_name, e))
     
     def delete_client(self):
         if self.search_results.currentItem() == None:
@@ -190,7 +204,7 @@ class Window(QWidget):
             if reply == QMessageBox.Yes:
                 try:
                     db.delete_client(clientID)
-                    QMessageBox.information(self, "Vellykket", "{} ble slette fra kundebanken".format(client_name))
+                    QMessageBox.information(self, "Vellykket", "{} ble slettet fra kundebanken".format(client_name))
                     self.refresh_db()
                 except:
                     QMessageBox.informtaion(self, "Advarsel", "No gikk galt. Kunne ikke slette {} fra kundebanken".format(client_name))
@@ -243,7 +257,7 @@ class AddClient(QWidget):
         for i in range((len(self.client_info)) - 1):
             self.input_data.append(self.inputs[i].text())
 
-        if len(self.input_data) > 2:
+        if (self.input_data[0] != "" and self.input_data[3] != ""):
             try:        
                 db.add_client(self.input_data)
                 QMessageBox.information(self, "Utfort!", "Kunde lagt til")
@@ -254,7 +268,7 @@ class AddClient(QWidget):
                 QMessageBox.information(self, "Advarsel", "Noe gikk galt")
                 pass
         else:
-            QMessageBox.information(self, "Advarsel", "For mange tomme felt")
+            QMessageBox.information(self, "Advarsel", "Du må legge til navn og telefon")
 
 class AddReference(QWidget):
     def __init__(self, window, info, clientID):
@@ -303,9 +317,11 @@ class AddReference(QWidget):
             QMessageBox.information(self, "Advarsel", "Du må legge til et fullt navn og telefonnummer")
         else:
             try:
-                print("Legger til")
                 db.add_reference(self.clientID, self.input_data)
-                QMessageBox.information(self, "Utfort!", "Referanseperons lagt til")
+                QMessageBox.information(self, "Utfort!", "Referanseperson lagt til")
+                # Refresh
+                self.window.refresh_db()
+                self.window.get_ref_persons(self.clientID)
                 self.close()
             except:
                 QMessageBox.information(self, "Advarsel", "Noe gikk galt")
@@ -316,5 +332,4 @@ def main():
     window = Window()
     sys.exit(App.exec_()) 
 
-if __name__ == "__main__":
-    main()
+main()

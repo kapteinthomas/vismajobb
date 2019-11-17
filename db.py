@@ -40,6 +40,10 @@ class Database:
     def delete_client(self, id):
         self.c.execute("DELETE FROM Kunde WHERE FirmaID = ?", (id,))
         self.conn.commit()
+
+    def delete_reference(self, id):
+        self.c.execute("DELETE FROM Referanseperson WHERE PersonID = ?", (id,))
+        self.conn.commit()
     
     def search_by_name(self, name):
         self.c.execute("SELECT * FROM Kunde WHERE Firmanavn = ?", (name,))
