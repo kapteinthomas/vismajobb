@@ -1,4 +1,4 @@
-# vismajob
+# vismaoppgave
 Programmeringsoppgave.
 
 Dependencies: PyQt5
